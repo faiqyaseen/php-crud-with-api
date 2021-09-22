@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-reboot.min.css">
+    <link rel="stylesheet" href="css/bootstrap-grid.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="row mt-4">
+
+            <!-- TABLE DATA -->
+            <div class="col-md-6 bg-secondary">
+                <div class="col-md-12 mt-2">
+                    <div class="row justify-content-between">
+                        <div class="col-md-5 text-white">
+                            <h2>Student Data</h2>
+                        </div>
+                        <div class="col-md-5 ">
+                            <input type="text" placeholder="Search Name" name="" id="search-box" class="form-control">
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-md-12 table-bordered table-wrapper-scroll-y my-custom-scrollbar">
+                    <table class="table table-hover table-dark">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Class</th>
+                                <th>Age</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loadTable" class="text-white">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- END TABLE DATA -->
+
+
+            <!-- ADD FORM  -->
+            <div class="col-md-5 bg-warning ml-5">
+                <div class="col-md-12 p-2 text-center">
+                    <h2>Add Data</h2>
+                </div>
+                <div class="col-md-12 pb-3">
+                    <form class="form-data">
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <input class="form-control" type="text" name="sname">
+                        </div>
+                        <div class="form-group">
+                            <label>Class:</label>
+                            <input class="form-control" type="text" name="sclass">
+                        </div>
+                        <div class="form-group">
+                            <label>Age:</label>
+                            <input class="form-control" type="text" name="sage">
+                        </div>
+                        <button class="btn btn-primary" name="save-data" id="save-data">Add Record</button>
+                    </form>
+                </div>
+            </div>
+            <!-- END ADD FORM  -->
+
+        </div>
+
+
+
+        <!-- EDIT Modal -->
+        <div class="modal fade" id="editmodal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Update Student</h5>
+                        <button type="button" class="close close-edit-modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="edit-form-data">
+                            <input class="form-control" type="hidden" id="std_id" name="sid">
+                            <div class="form-group">
+                                <label>Name:</label>
+                                <input class="form-control" type="text" name="sname" id="std_name">
+                            </div>
+                            <div class="form-group">
+                                <label>Class:</label>
+                                <input class="form-control" type="text" name="sclass" id="std_class">
+                            </div>
+                            <div class="form-group">
+                                <label>Age:</label>
+                                <input class="form-control" type="text" name="sage" id="std_age">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-edit-modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="save-edit">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END EDIT Modal -->
+
+
+        <!-- MESSAGE BOX -->
+        <div class="alert fade" role="alert">
+            <span id="inner-message"></span>
+            <button type="button" class="close message-close" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <!-- END MESSAGE BOX -->
+
+    </div>
+
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            // FETCH ALL RECORD
+            function loadTable() {
+                $.ajax({
+                    url: "http://localhost/practice/api/crud/api-fetch-all.php",
+                    type: "GET",
+                    success: function (data) {
+                        if (data.status == false) {
+                            $("#loadTable").html("<tr><td colspan='6'><h2>" + data.message + "<h2></td></tr>")
+                        } else {
+                            $.each(data, function (key, value) {
+                                $("#loadTable").append(`<tr>
+                                <td>${value.id}</td>
+                                <td>${value.name}</td>
+                                <td>${value.class}</td>
+                                <td>${value.age}</td>
+                                <td>
+                                    <button class="btn btn-warning" data-toggle="modal" data-eid="${value.id}">Edit</button> 
+                                    <button class="btn btn-danger" id="delete-btn" data-did="${value.id}">Delete</button>  
+                                </td>
+                            </tr>`)
+                            })
+                        }
+                    }
+                })
+            }
+            loadTable();
+
+
+            // FUNCTION FOR SHOW MESSAGE
+            function showMessage(message, bootclass) {
+                $(".alert").removeClass("fade").addClass(bootclass);
+                $("#inner-message").html(message)
+                setTimeout(function () {
+                    $(".alert").addClass("fade").removeClass("alert-danger alert-success alert-warning");
+                }, 4000)
+            }
+
+
+            // FUNCTION FOR CLOSE MESSAGE
+            function closeMessage(closeClassOrId, alertClassOrId) {
+                $(closeClassOrId).on("click", function () {
+                    $(alertClassOrId).addClass("fade").removeClass("alert-danger alert-success alert-warning");
+                })
+            }
+            closeMessage(".message-close", ".alert");
+
+
+            // FUNCTION FOR FORM DATA TO JSON DATA
+            function jsonData(targetForm) {
+                var arr = $(targetForm).serializeArray();
+                var obj = {};
+                for (var a = 0; a < arr.length; a++) {
+                    if (arr[a].value == "") {
+                        return false;
+                    }
+                    obj[arr[a].name] = arr[a].value;
+                }
+                var json_string = JSON.stringify(obj);
+                return json_string;
+            }
+
+
+            // INSERT DATA
+            $("#save-data").on("click", function (e) {
+                e.preventDefault();
+                var jsonObj = jsonData(".form-data");
+                if (jsonObj == false) {
+                    showMessage("All Fields Are Required.!", "alert-danger");
+                } else {
+                    $.ajax({
+                        url: "http://localhost/practice/api/crud/api-insert.php",
+                        type: "POST",
+                        data: jsonObj,
+                        success: function (data) {
+                            // alert(data.status);
+                            // console.log(data.message);
+
+                            // -------> SUCCESSE NOT WORKING <------- \\
+                        }
+                    })
+                    showMessage("Record Added Successfully", "alert-success");
+                    $(".form-data").trigger("reset");
+                    loadTable(); // load table not woking
+                }
+            })
+
+
+            // FETCH SINGLE ROW : SHOW IN MODAL BOX
+            $(document).on("click", ".btn-warning", function () {
+                $("#editmodal").modal("show");
+                var stdid = $(this).data("eid");
+                var obj = { "sid": stdid }
+                var jsonobj = JSON.stringify(obj);
+
+                $.ajax({
+                    url: "http://localhost/practice/api/crud/api-fetch-single.php",
+                    type: "POST",
+                    data: jsonobj,
+                    success: function (data) {
+                        $("#std_id").val(data[0].id);
+                        $("#std_name").val(data[0].name);
+                        $("#std_class").val(data[0].class);
+                        $("#std_age").val(data[0].age);
+                    }
+                })
+            })
+
+
+            // HIDE MODAL BOX MESSAGE ALERT
+            $(".close-edit-modal").on("click", function () {
+                $("#editmodal").modal("hide");
+            })
+
+
+            // UPDATE DATA
+            $("#save-edit").on("click", function (e) {
+                e.preventDefault();
+                var jsonObj = jsonData(".edit-form-data");
+                if (jsonObj == false) {
+                    showMessage("All Fields Are Required.!", "alert-danger");
+                } else {
+                    $.ajax({
+                        url: "http://localhost/practice/api/crud/api-update.php",
+                        type: "POST",
+                        data: jsonObj,
+                        success: function (data) {
+                            alert(data.status);
+                            console.log(data.message);
+                            $("#editmodal").modal("hide");
+
+                            // -------> SUCCESSE NOT WORKING <------- \\
+                        }
+                    })
+                    showMessage("Record Edited Successfully", "alert-success");
+                    $(".edit-form-data").trigger("reset");
+                    $("#editmodal").modal("hide");
+                    loadTable(); // load table not woking
+                }
+            })
+
+
+            // DELETE DATA
+            $(document).on("click", "#delete-btn", function (e) {
+                if (confirm("Do You Really Want TO Delete This Record?")) {
+                    var stdid = $(this).data("did");
+                    var obj = { "sid": stdid }
+                    var jsonobj = JSON.stringify(obj);
+                    var row = this
+                    $.ajax({
+                        url: "http://localhost/practice/api/crud/api-delete.php",
+                        type: "POST",
+                        data: jsonobj,
+                        success: function (data) {
+                            // alert("ANYTHING")
+                            showMessage(data.message, "alert-success")
+                            $(row).closest("tr").fadeOut();
+                            // ----> SUCCESS NOT WORKING <---- \\ 
+                        }
+                    })
+                    showMessage("Record Deleted Successfully", "alert-success")
+                    $(row).closest("tr").fadeOut();
+                }
+            })
+
+
+
+            // LIVE SEARCH RECORD
+            $("#search-box").on("keyup", function () {
+                var search_term = $(this).val();
+                $("#loadTable").html("");
+                $.ajax({
+                    url: "http://localhost/practice/api/crud/api-search.php?search=" + search_term,
+                    type: "GET",
+                    success: function (data) {
+                        if (data.status == false) {
+                            $("#loadTable").html("<tr><td colspan='6'><h2>" + data.message + "<h2></td></tr>")
+                        } else {
+                            $.each(data, function (key, value) {
+                                $("#loadTable").append(`<tr>
+                                <td>${value.id}</td>
+                                <td>${value.name}</td>
+                                <td>${value.class}</td>
+                                <td>${value.age}</td>
+                                <td>
+                                    <button class="btn btn-warning" data-toggle="modal" data-eid="${value.id}">Edit</button> 
+                                    <button class="btn btn-danger" id="delete-btn" data-did="${value.id}">Delete</button>  
+                                </td>
+                            </tr>`)
+                            })
+                        }
+                    }
+                })
+            })
+
+        })
+    </script>
+</body>
+
+</html>
